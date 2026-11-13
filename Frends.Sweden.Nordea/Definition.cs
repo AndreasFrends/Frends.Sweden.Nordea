@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Frends.Sweden.Nordea
 {
     /// <summary>
-    /// Input class for task FileProtectionHmac 
+    /// Input class for task FileProtectionHmac
     /// </summary>
     public class NordeaHmacInputGeneral
     {
@@ -31,31 +31,14 @@ namespace Frends.Sweden.Nordea
         [DisplayFormat(DataFormatString = "Text")]
         [DefaultValue(@"C:\OutFolder\SignedFileWithAddedPosts.txt")]
         public string TargetFilePath { get; set; }
-
-        /// <summary>
-        /// Use temp directory? A temporary directory where a temp file used for 
-        /// HMAC calculation will be added and deleted after calculation is done.
-        /// If set to No (default), then source file dir will be used instead.
-        /// The temp file will allways be named &lt;source file name&gt;_tmp.
-        /// </summary>
-        public bool UseTempFileDir { get; set; }
-
-        /// <summary>
-        /// Temp directory
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [UIHint(nameof(UseTempFileDir), "", true)]
-        [DefaultValue(@"C:\InFolder\Temp")]
-        public string TempDirPath { get; set; }
     }
 
     public class NordeaHmacInputTransmissionHeader
     {
         /// <summary>
-        /// Node Id - Max chars 10 (leave empty if not used).
+        /// Node Id - Max chars 10. Optional: space-padded if left empty, no code-level requirement to set it.
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
-        //[DefaultValue("1234567890ABCDEF1234567890ABCDEF")]
         public string NodeId_Pos_5_To_14 { get; set; }
 
         /// <summary>
@@ -70,63 +53,27 @@ namespace Frends.Sweden.Nordea
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
         public string FileType_Pos_22_To_24 { get; set; }
-
-        /// <summary>
-        /// External reference - Max chars 6. Dates must be specified as yyMMdd. If left empty, then todays date will be added.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string ExternalReference_Pos_25_To_30 { get; set; }
-
-        /// <summary>
-        /// Free field - Max chars 1 (leave empty if not used).
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string FreeField_Pos_31 { get; set; }
-
-        /// <summary>
-        /// Reserve - Max chars 48 (leave empty if not used).
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Reserve_Pos_33_To_80 { get; set; }
     }
 
     public class NordeaHmacInputFileHeader
     {
         /// <summary>
-        /// Destination node - Max chars 10 (leave empty if not used).
+        /// Destination node - Max chars 10. Optional: space-padded if left empty.
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
         public string DestinationNode_Pos_5_To_14 { get; set; }
 
         /// <summary>
-        /// Source node - Max chars 10 (leave empty if not used).
+        /// Source node - Max chars 10. Optional: space-padded if left empty.
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
         public string SourceNode_Pos_15_To_24 { get; set; }
-
-        /// <summary>
-        /// External reference 1 - Max chars 7. Dates must be specified as yyMMdd. If left empty, then todays date will be added.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string ExternalReference_1_Pos_25_To_31 { get; set; }
 
         /// <summary>
         /// Number of items - Max chars 7 (leave empty if not used).
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
         public string NumberOfItems_Pos_32_To_38 { get; set; }
-
-        /// <summary>
-        /// External reference 2 - Max chars 10 (leave empty if not used).
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string ExternalReference_2_Pos_39_To_48 { get; set; }
-
-        /// <summary>
-        /// Reserve - Max chars 32 (leave empty if not used).
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Reserve_Pos_49_To_80 { get; set; }
     }
 
     public class NordeaHmacInputFileTrailer
@@ -136,21 +83,10 @@ namespace Frends.Sweden.Nordea
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
         public string NumberOfRecords_Pos_5_To_11 { get; set; }
-
-        /// <summary>
-        /// Reserve - Max chars 5 (leave empty if not used).
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Reserve_Pos_76_To_80 { get; set; }
     }
 
     public class NordeaHmacInputTransmissionTrailer
     {
-        /// <summary>
-        /// Reserve - Max chars 76 (leave empty if not used).
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Reserve_Pos_5_To_80 { get; set; }
     }
 
     public class Result
@@ -162,6 +98,12 @@ namespace Frends.Sweden.Nordea
         public FileHeader FileHeader { get; set; }
         public FileTrailer FileTrailer { get; set; }
         public TransmissionTrailer TransmissionTrailer { get; set; }
+        public int ReplacedCharacterCount { get; set; }
+        public string DetectedSourceEncoding { get; set; }
+        public string OutputEncoding { get; set; }
+        public bool ContainsUtf8Bom { get; set; }
+        public bool ContainsNonAsciiBytes { get; set; }
+        public int OutputByteCount { get; set; }
     }
 
     public class TransmissionHeader
@@ -205,5 +147,12 @@ namespace Frends.Sweden.Nordea
         public string _002Pos1To4 { get; set; }
         public string ReservePos5To80 { get; set; }
         public string TransmissionTrailerLine { get; set; }
+    }
+
+    public enum FileEncoding
+    {
+        ISO88591,
+        UTF8,
+        Windows1252
     }
 }
