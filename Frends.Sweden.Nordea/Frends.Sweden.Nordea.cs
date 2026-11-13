@@ -149,7 +149,6 @@ namespace Frends.Sweden.Nordea
             [PropertyTab] NordeaHmacInputTransmissionHeader TransmissionHeader,
             [PropertyTab] NordeaHmacInputFileHeader FileHeader,
             [PropertyTab] NordeaHmacInputFileTrailer FileTrailer,
-            [PropertyTab] NordeaHmacInputTransmissionTrailer TransmissionTrailer,
             CancellationToken cancellationToken)
         {
             if (File.Exists(General.TargetFilePath))
@@ -167,7 +166,7 @@ namespace Frends.Sweden.Nordea
             var transmissionHeader = CreateTransmissionHeader(TransmissionHeader);
             var fileHeader = CreateFileHeader(FileHeader);
             var fileTrailer = CreateFileTrailer(FileTrailer, kvvHmac, fileContentHmac);
-            var transmissionTrailer = CreateTransmissionTrailer(TransmissionTrailer);
+            var transmissionTrailer = CreateTransmissionTrailer();
 
             var diagnostics = WriteOutFile(
                 General.TargetFilePath,
@@ -192,7 +191,6 @@ namespace Frends.Sweden.Nordea
                 TransmissionHeader = transmissionHeader,
                 FileHeader = fileHeader,
                 FileTrailer = fileTrailer,
-                TransmissionTrailer = transmissionTrailer
             };
         }
 
@@ -298,7 +296,7 @@ namespace Frends.Sweden.Nordea
             {
                 _001Pos1To4 = "%001",
                 NodeIdPos5To14 = Pad(input.NodeId_Pos_5_To_14, "Node id pos 5 to 14", 10),
-                PasswordPos15To20 = Pad(input.Password_Pos_15_To_20, "Password pos 15 to 20", 6),
+                PasswordPos15To20 = Pad(null, "Password pos 15 to 20", 6),
                 DeliveryPos21 = "0",
                 FileTypePos22To24 = Pad(input.FileType_Pos_22_To_24, "File type pos 22 to 24", 3),
                 ExternalReferencePos25To30 = Pad(externalReference, "External reference pos 25 to 30", 6),
@@ -351,7 +349,7 @@ namespace Frends.Sweden.Nordea
             return ft;
         }
 
-        private static TransmissionTrailer CreateTransmissionTrailer(NordeaHmacInputTransmissionTrailer input)
+        private static TransmissionTrailer CreateTransmissionTrailer()
         {
             var tt = new TransmissionTrailer
             {

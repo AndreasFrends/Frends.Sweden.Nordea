@@ -42,13 +42,6 @@ namespace Frends.Sweden.Nordea
         public string NodeId_Pos_5_To_14 { get; set; }
 
         /// <summary>
-        /// Password - Max chars 6 (leave empty if not used).
-        /// </summary>
-        [PasswordPropertyText]
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Password_Pos_15_To_20 { get; set; }
-
-        /// <summary>
         /// File type - Max chars 3 (leave empty if not used).
         /// </summary>
         [DisplayFormat(DataFormatString = "Text")]
@@ -85,10 +78,6 @@ namespace Frends.Sweden.Nordea
         public string NumberOfRecords_Pos_5_To_11 { get; set; }
     }
 
-    public class NordeaHmacInputTransmissionTrailer
-    {
-    }
-
     public class Result
     {
         public string SourceFilePath { get; set; }
@@ -97,7 +86,6 @@ namespace Frends.Sweden.Nordea
         public TransmissionHeader TransmissionHeader { get; set; }
         public FileHeader FileHeader { get; set; }
         public FileTrailer FileTrailer { get; set; }
-        public TransmissionTrailer TransmissionTrailer { get; set; }
         public int ReplacedCharacterCount { get; set; }
         public string DetectedSourceEncoding { get; set; }
         public string OutputEncoding { get; set; }
@@ -147,12 +135,5 @@ namespace Frends.Sweden.Nordea
         public string _002Pos1To4 { get; set; }
         public string ReservePos5To80 { get; set; }
         public string TransmissionTrailerLine { get; set; }
-    }
-
-    public enum FileEncoding
-    {
-        ISO88591,
-        UTF8,
-        Windows1252
     }
 }
