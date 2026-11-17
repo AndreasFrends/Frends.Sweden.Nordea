@@ -8,7 +8,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 
 		<PackageId>Frends.Sweden.Nordea</PackageId>
-		<Version>1.7.6</Version>
+		<Version>1.7.10</Version>
 
 		<Authors>Andreas Stavridis</Authors>
 		<Description>Sweden Nordea HMAC task</Description>
