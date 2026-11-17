@@ -158,10 +158,15 @@ namespace Frends.Sweden.Nordea
             string kvvHmac = GetSealMac(key, StrictAscii.GetBytes("00000000"));
 
             // Decode once, convert once. These bytes are what gets written AND what gets hashed.
-            byte[] content = ConvertToNordeaBytes(General.SourceFilePath, out int replacedCount, out string detectedEncoding);
+            byte[] content = ConvertToNordeaBytes(
+                General.SourceFilePath,
+                out int replacedCount,
+                out string detectedEncoding);
 
             cancellationToken.ThrowIfCancellationRequested();
-            string fileContentHmac = GetSealMac(key, NormalizeForMac(content));
+            byte[] normalizedContent = NormalizeForMac(content);
+
+            string fileContentHmac = GetSealMac(key, normalizedContent);
 
             var transmissionHeader = CreateTransmissionHeader(TransmissionHeader);
             var fileHeader = CreateFileHeader(FileHeader);
@@ -233,25 +238,27 @@ namespace Frends.Sweden.Nordea
             }
         }
 
-        /// <summary>
-        /// Decodes the source file strictly, then maps every character through the Nordea table.
-        /// CR/LF are kept as-is (they are ignored by the MAC). Unmapped characters become '?'.
-        /// Trailing line breaks are trimmed so exactly one line break precedes the %022 record.
-        /// </summary>
-        private static byte[] ConvertToNordeaBytes(string sourceFilePath, out int replacedCount, out string detectedEncoding)
+        private static byte[] ConvertToNordeaBytes(
+            string sourceFilePath,
+            out int replacedCount,
+            out string detectedEncoding)
         {
-            // DecodeSource skips a UTF-8 BOM, so U+FEFF never reaches the char map.
-            string text = DecodeSource(sourceFilePath, out detectedEncoding).TrimEnd('\r', '\n');
+            string text = DecodeSource(sourceFilePath, out detectedEncoding);
 
             var bytes = new List<byte>(text.Length);
+
             replacedCount = 0;
 
             foreach (char c in text)
             {
                 if (c == '\r' || c == '\n')
+                {
                     bytes.Add((byte)c);
+                }
                 else if (CharMap.TryGetValue(c, out byte mapped))
+                {
                     bytes.Add(mapped);
+                }
                 else
                 {
                     bytes.Add((byte)'?');
@@ -266,16 +273,26 @@ namespace Frends.Sweden.Nordea
         /// Nordea spec 2.3.2: CR/LF ignored entirely, 0x20-0x7E used unchanged, anything else replaced by 0xC3.
         /// Applied to the bytes that are actually written, so sender and receiver hash the same data.
         /// </summary>
+        /// <summary>
+        /// Nordea spec 2.3.2:
+        /// - CR/LF are ignored.
+        /// - Bytes 0x20-0x7E are used unchanged.
+        /// - Everything else becomes 0xC3.
+        /// </summary>
         private static byte[] NormalizeForMac(byte[] content)
         {
             var normalized = new List<byte>(content.Length);
 
             foreach (byte b in content)
             {
+                // Ignore CR/LF completely
                 if (b == 0x0D || b == 0x0A)
                     continue;
 
-                normalized.Add(b is >= 0x20 and <= 0x7E ? b : (byte)0xC3);
+                if (b >= 0x20 && b <= 0x7E)
+                    normalized.Add(b);
+                else
+                    normalized.Add(0xC3);
             }
 
             return normalized.ToArray();
@@ -371,6 +388,10 @@ namespace Frends.Sweden.Nordea
             string transmissionHeaderLine, string fileHeaderLine,
             string fileTrailerLine, string transmissionTrailerLine)
         {
+            bool endsWithLineBreak =
+            content.Length > 0 &&
+            (content[^1] == (byte)'\n' || content[^1] == (byte)'\r');
+
             using var output = new MemoryStream();
 
             void Write(byte[] bytes) => output.Write(bytes, 0, bytes.Length);
@@ -378,7 +399,12 @@ namespace Frends.Sweden.Nordea
             Write(StrictAscii.GetBytes(transmissionHeaderLine + "\r\n"));
             Write(StrictAscii.GetBytes(fileHeaderLine + "\r\n"));
             Write(content);
-            Write(StrictAscii.GetBytes("\r\n" + fileTrailerLine + "\r\n" + transmissionTrailerLine));
+
+            if (!endsWithLineBreak)
+                Write(StrictAscii.GetBytes("\r\n"));
+
+            Write(StrictAscii.GetBytes(fileTrailerLine + "\r\n"));
+            Write(StrictAscii.GetBytes(transmissionTrailerLine));
 
             byte[] finalBytes = output.ToArray();
 
@@ -387,10 +413,6 @@ namespace Frends.Sweden.Nordea
                           finalBytes[1] == 0xBB &&
                           finalBytes[2] == 0xBF;
 
-            bool hasNonAscii = Array.Exists(finalBytes, b => b > 0x7F);
-
-            if (hasNonAscii)
-                throw new Exception("Output contains non-ASCII bytes!");
 
             File.WriteAllBytes(outFilePath, finalBytes);
 
@@ -398,7 +420,6 @@ namespace Frends.Sweden.Nordea
             {
                 OutputEncoding = "7-bit ASCII",
                 ContainsUtf8Bom = hasBom,
-                ContainsNonAsciiBytes = hasNonAscii,
                 OutputByteCount = finalBytes.Length
             };
         }
